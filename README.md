@@ -3,7 +3,7 @@
   </br> </br>
   
   [![GitHub](https://img.shields.io/badge/github-la--pasta-181717?style=for-the-badge&logo=github)](https://github.com/Adyllsxn/la-pasta)
-  [![Demo](https://img.shields.io/badge/demo-online-4c1?style=for-the-badge&logo=github&logoColor=white)](https://adyllsxn.github.io/la-pasta)
+  [![Demo](https://img.shields.io/badge/demo-online-4c1?style=for-the-badge&logo=github&logoColor=white)](https://adyllsxn.github.io/la-pasta/)
   [![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](LICENSE)
 
 </div>
@@ -74,13 +74,13 @@ dotnet run
 ```
 > Local http://localhost:5224
 
-> Remoto https://palanca-food.vercel.app/
+> Remoto https://adyllsxn.github.io/la-pasta/
 
 ---
 
 ## 📌 CRÉDITOS
 
-Inspirado no projeto [Grilli ](https://github.com/codewithsadee/foodie) de [codewithsadee](https://github.com/codewithsadee)
+Inspirado no projeto [Grilli ](https://github.com/codewithsadee/grilli) de [codewithsadee](https://github.com/codewithsadee)
 
 ---
 
