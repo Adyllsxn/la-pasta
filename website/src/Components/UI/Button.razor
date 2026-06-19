@@ -1,0 +1,13 @@
+@* Botão reutilizável *@
+
+<button class="btn @ButtonClass" @onclick="OnClick">
+    <span class="text text-1">@Text1</span>
+    <span class="text text-2" aria-hidden="true">@Text2</span>
+</button>
+
+@code {
+    [Parameter] public string Text1 { get; set; } = "Button";
+    [Parameter] public string Text2 { get; set; } = "Button";
+    [Parameter] public string ButtonClass { get; set; } = "btn-primary";
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+}

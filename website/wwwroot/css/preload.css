@@ -1,0 +1,108 @@
+/*-----------------------------------*\
+  #PRELOADER - LA PASTA
+\*-----------------------------------*/
+
+.preload {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #d4af37 0%, #c9a030 50%, #b8922a 100%);
+    z-index: 99999;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    transition: all 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    gap: 30px;
+}
+
+.preload > * {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.preload.loaded > * {
+    opacity: 0;
+    transform: scale(0.8);
+}
+
+.preload.loaded {
+    transition-delay: 300ms;
+    transform: translateY(100%);
+}
+
+/* CÍRCULO COM BORDA DUPLA */
+.preload .circle {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.preload .circle::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-block-start-color: #1a1a1a;
+    border-block-end-color: #1a1a1a;
+    animation: rotate360 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.preload .circle::after {
+    content: '✦';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    color: #1a1a1a;
+    animation: twinkle 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate360 {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(1turn); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+@keyframes twinkle {
+    0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.8); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+/* TEXTO "LA PASTA" - REMOVIDO COMPLETAMENTE */
+
+/* BARRA DE CARREGAMENTO */
+.preload .loading-bar {
+    width: 160px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.preload .loading-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    background: #1a1a1a;
+    border-radius: 4px;
+    animation: loadProgress 2.5s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+@keyframes loadProgress {
+    0% { width: 0%; left: 0; }
+    50% { width: 70%; left: 0; }
+    100% { width: 0%; left: 100%; }
+}

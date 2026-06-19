@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/website/">
+    <Project Path="website/LaPasta.csproj" />
+  </Folder>
+</Solution>
