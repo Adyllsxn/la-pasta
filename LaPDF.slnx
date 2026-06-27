@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LaPDF.UnitTests/LaPDF.UnitTests.csproj" />
+    <Project Path="src/LaPDF.Web/LaPDF.Web.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,322 @@
+/* ===== BASE ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 14px;
+    height: 100%;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: #0a0a0a;
+    color: #fff;
+}
+
+main {
+    flex: 1;
+    padding: 2rem 0;
+}
+
+/* ===== LOGO BRANCA ===== */
+.logo-white {
+    filter: brightness(0) invert(1);
+    transition: transform 0.3s ease;
+}
+
+.logo-white:hover {
+    transform: scale(1.05);
+}
+
+/* ===== HEADER ===== */
+.header-dark {
+    background: #0a0a0a;
+    padding: 0.5rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.navbar {
+    padding: 0;
+}
+
+.navbar-brand {
+    padding: 0;
+}
+
+.navbar-toggler {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.5rem 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.navbar-toggler-icon {
+    filter: invert(1);
+}
+
+.nav-item {
+    margin: 0 0.2rem;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.nav-link.active {
+    color: #fff !important;
+    background: rgba(229, 57, 53, 0.15);
+}
+
+/* ===== HERO ===== */
+.hero-title {
+    font-size: 3.5rem;
+    line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.2rem;
+    }
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #e53935 0%, #ff6b6b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-description {
+    font-size: 1.15rem;
+    line-height: 1.8;
+}
+
+/* ===== TOOLS MODERN ===== */
+.tools-section {
+    padding: 1rem 0 2rem 0;
+}
+
+.tool-card-modern {
+    position: relative;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 1.8rem 1.5rem;
+    transition: all 0.4s ease;
+    cursor: pointer;
+    overflow: hidden;
+    height: 100%;
+    min-height: 200px;
+}
+
+.tool-card-modern:hover {
+    transform: translateY(-6px);
+    border-color: rgba(229, 57, 53, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Ícone gigante no fundo */
+.tool-icon-bg {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    font-size: 8rem;
+    opacity: 0.05;
+    color: #e53935;
+    transition: all 0.4s ease;
+    pointer-events: none;
+}
+
+.tool-card-modern:hover .tool-icon-bg {
+    opacity: 0.10;
+    transform: scale(1.05);
+}
+
+/* Número decorativo */
+.tool-number {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.04);
+    transition: color 0.3s ease;
+    line-height: 1;
+    font-family: 'Arial', sans-serif;
+    user-select: none;
+}
+
+.tool-card-modern:hover .tool-number {
+    color: rgba(229, 57, 53, 0.08);
+}
+
+/* Título */
+.tool-title-modern {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    transition: color 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.tool-card-modern:hover .tool-title-modern {
+    color: #e53935;
+}
+
+/* Descrição */
+.tool-desc-modern {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* Linha decorativa */
+.tool-line-modern {
+    width: 30px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: all 0.4s ease;
+    border-radius: 2px;
+    position: relative;
+    z-index: 2;
+}
+
+.tool-card-modern:hover .tool-line-modern {
+    width: 50px;
+    background: #e53935;
+}
+
+/* ===== WHY (sem cards) ===== */
+.why-section {
+    padding: 2rem 0 1rem 0;
+}
+
+.why-item {
+    padding: 1.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.why-item:hover {
+    transform: translateY(-4px);
+}
+
+.why-icon {
+    font-size: 2.8rem;
+    color: #e53935;
+    margin-bottom: 1rem;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.why-item:hover .why-icon {
+    transform: scale(1.1);
+}
+
+.why-title {
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.why-description {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    max-width: 280px;
+    margin: 0 auto;
+}
+
+/* ===== FOOTER ===== */
+.footer-dark {
+    background: #0a0a0a;
+    padding: 1.5rem 0;
+    margin-top: auto;
+    width: 100%;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footer-dark p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 992px) {
+    .navbar-nav {
+        margin: 1rem 0;
+    }
+    
+    .nav-item {
+        margin: 0.2rem 0;
+    }
+    
+    .nav-link {
+        text-align: center;
+        padding: 0.6rem 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .tool-card-modern {
+        min-height: auto;
+        padding: 1.5rem;
+    }
+    
+    .tool-number {
+        font-size: 2rem;
+    }
+    
+    .tool-icon-bg {
+        font-size: 6rem;
+    }
+    
+    .hero-title {
+        font-size: 2.2rem;
+    }
+    
+    .hero-description {
+        font-size: 1rem;
+    }
+    
+    .why-item {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .why-description {
+        max-width: 100%;
+    }
+}
