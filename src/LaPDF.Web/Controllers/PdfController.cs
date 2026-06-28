@@ -99,7 +99,7 @@ public class PdfController : Controller
                 ? "mesclado.pdf" 
                 : $"{request.MergedFileName}.pdf";
 
-            TempData["Success"] = "PDFs mesclados com sucesso!";
+            TempData["Success"] = $"✅ {request.Files.Count} PDFs mesclados com sucesso!";
             return File(result, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -137,21 +137,32 @@ public class PdfController : Controller
                 return RedirectToAction("Split");
             }
 
-            if (!request.SplitAllPages && (request.PageNumbers == null || !request.PageNumbers.Any()))
+            if (!request.SplitAllPages)
             {
-                TempData["Error"] = "Selecione pelo menos uma página ou marque 'Dividir todas'.";
-                return RedirectToAction("Split");
+                var pageNumbers = request.PageNumbers;
+                if (pageNumbers == null || !pageNumbers.Any())
+                {
+                    TempData["Error"] = "Digite pelo menos um número de página ou marque 'Dividir todas'.";
+                    return RedirectToAction("Split");
+                }
             }
 
             var results = await _pdfService.SplitAsync(request);
 
-            if (results.Count == 1)
+            if (results == null || results.Count == 0)
             {
-                TempData["Success"] = "Página extraída com sucesso!";
-                return File(results[0], "application/pdf", $"pagina_{request.PageNumbers?.FirstOrDefault() ?? 1}.pdf");
+                TempData["Error"] = "Nenhuma página foi extraída. Verifique os números informados.";
+                return RedirectToAction("Split");
             }
 
-            TempData["Success"] = $"PDF dividido em {results.Count} páginas!";
+            if (results.Count == 1)
+            {
+                TempData["Success"] = "✅ Página extraída com sucesso!";
+                var pageNum = request.PageNumbers?.FirstOrDefault() ?? 1;
+                return File(results[0], "application/pdf", $"pagina_{pageNum}.pdf");
+            }
+
+            TempData["Success"] = $"✅ PDF dividido em {results.Count} páginas!";
             return File(results[0], "application/pdf", "dividido.pdf");
         }
         catch (Exception ex)
@@ -194,8 +205,13 @@ public class PdfController : Controller
             var extension = request.TargetFormat.ToString().ToLower();
             var fileName = $"convertido.{extension}";
 
-            TempData["Success"] = "PDF convertido com sucesso!";
+            TempData["Success"] = "✅ PDF convertido com sucesso!";
             return File(result, "application/octet-stream", fileName);
+        }
+        catch (NotImplementedException)
+        {
+            TempData["Error"] = "🚧 Esta conversão ainda está em desenvolvimento. Em breve estará disponível!";
+            return RedirectToAction("Convert");
         }
         catch (Exception ex)
         {

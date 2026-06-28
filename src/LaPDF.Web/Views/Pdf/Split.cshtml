@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "Split PDF";
+}
+
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold text-white">✂️ Split PDF</h1>
+        <p class="text-white-50">Separe páginas em arquivos independentes</p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <form asp-action="Split" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label text-white">Selecione o arquivo PDF</label>
+                            <input type="file" name="File" class="form-control" accept=".pdf" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="SplitAllPages" class="form-check-input" id="splitAll" value="true" />
+                                <label class="form-check-label text-white" for="splitAll">Dividir todas as páginas</label>
+                            </div>
+                            <small class="text-white-50">Cada página será um arquivo separado</small>
+                        </div>
+
+                        <div class="mb-3" id="pageNumbersGroup">
+                            <label class="form-label text-white">Números das páginas</label>
+                            <input type="text" name="PageNumbersInput" class="form-control" placeholder="Ex: 1,3,5,7" />
+                            <small class="text-white-50">Digite os números separados por vírgula (ex: 1,3,5)</small>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-cut me-2"></i>Dividir PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('splitAll').addEventListener('change', function() {
+            const pageNumbersGroup = document.getElementById('pageNumbersGroup');
+            if (this.checked) {
+                pageNumbersGroup.style.display = 'none';
+            } else {
+                pageNumbersGroup.style.display = 'block';
+            }
+        });
+    </script>
+}

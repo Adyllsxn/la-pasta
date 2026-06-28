@@ -1,0 +1,54 @@
+@{
+    ViewData["Title"] = "Converter PDF";
+}
+
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold text-white">🔄 Converter PDF</h1>
+        <p class="text-white-50">Converta PDF para imagens</p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <form asp-action="Convert" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label text-white">Selecione o arquivo PDF</label>
+                            <input type="file" name="File" class="form-control" accept=".pdf" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-white">Formato de destino</label>
+                            <select name="TargetFormat" class="form-select">
+                                <option value="JPG">🖼️ JPG (.jpg)</option>
+                                <option value="PNG">🖼️ PNG (.png)</option>
+                            </select>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Nota:</strong> A conversão extrai a primeira página do PDF para imagem.
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-exchange-alt me-2"></i>Converter PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

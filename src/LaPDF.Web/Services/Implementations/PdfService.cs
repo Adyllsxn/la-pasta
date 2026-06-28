@@ -110,7 +110,27 @@ public class PdfService : IPdfService
 
     public async Task<byte[]> ConvertAsync(ConvertRequest request)
     {
-        throw new NotImplementedException("Funcionalidade em desenvolvimento");
+        try
+        {
+            if (request.File == null || request.File.Length == 0)
+                throw new Exception("Nenhum arquivo foi selecionado");
+
+            var fileBytes = await GetFileBytesAsync(request.File);
+
+            var result = request.TargetFormat switch
+            {
+                ConvertFormat.JPG => await ConvertPdfToJpgAsync(fileBytes),
+                ConvertFormat.PNG => await ConvertPdfToPngAsync(fileBytes),
+                _ => throw new NotImplementedException($"Conversão para {request.TargetFormat} em desenvolvimento")
+            };
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao converter PDF");
+            throw;
+        }
     }
 
     public bool IsValidPdf(byte[] fileBytes)
@@ -176,7 +196,7 @@ public class PdfService : IPdfService
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "/usr/bin/gs",  // Caminho absoluto
+                    FileName = "/usr/bin/gs",
                     Arguments = args,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -351,7 +371,7 @@ public class PdfService : IPdfService
             var output = await process.StandardOutput.ReadToEndAsync();
             await process.WaitForExitAsync();
             
-            var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)");
+            var match = Regex.Match(output, @"(\d+)");
             if (match.Success)
                 return int.Parse(match.Groups[1].Value);
             
@@ -361,6 +381,90 @@ public class PdfService : IPdfService
         {
             return 1;
         }
+    }
+
+    private async Task<byte[]> ConvertPdfToJpgAsync(byte[] fileBytes)
+    {
+        return await Task.Run(() =>
+        {
+            var tempInput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+            var tempOutput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".jpg");
+            
+            try
+            {
+                System.IO.File.WriteAllBytes(tempInput, fileBytes);
+                
+                var args = $"-dNOPAUSE -dBATCH -sDEVICE=jpeg -dFirstPage=1 -dLastPage=1 -dJPEGQ=90 -sOutputFile={tempOutput} {tempInput}";
+                
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "/usr/bin/gs",
+                        Arguments = args,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                
+                process.Start();
+                process.WaitForExit();
+                
+                if (process.ExitCode != 0)
+                    throw new Exception("Falha na conversão para JPG");
+                
+                return System.IO.File.ReadAllBytes(tempOutput);
+            }
+            finally
+            {
+                if (System.IO.File.Exists(tempInput)) System.IO.File.Delete(tempInput);
+                if (System.IO.File.Exists(tempOutput)) System.IO.File.Delete(tempOutput);
+            }
+        });
+    }
+
+    private async Task<byte[]> ConvertPdfToPngAsync(byte[] fileBytes)
+    {
+        return await Task.Run(() =>
+        {
+            var tempInput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+            var tempOutput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
+            
+            try
+            {
+                System.IO.File.WriteAllBytes(tempInput, fileBytes);
+                
+                var args = $"-dNOPAUSE -dBATCH -sDEVICE=png16m -dFirstPage=1 -dLastPage=1 -sOutputFile={tempOutput} {tempInput}";
+                
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "/usr/bin/gs",
+                        Arguments = args,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                
+                process.Start();
+                process.WaitForExit();
+                
+                if (process.ExitCode != 0)
+                    throw new Exception("Falha na conversão para PNG");
+                
+                return System.IO.File.ReadAllBytes(tempOutput);
+            }
+            finally
+            {
+                if (System.IO.File.Exists(tempInput)) System.IO.File.Delete(tempInput);
+                if (System.IO.File.Exists(tempOutput)) System.IO.File.Delete(tempOutput);
+            }
+        });
     }
 
     private double CalculateReduction(long original, long compressed)

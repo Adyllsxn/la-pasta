@@ -1,15 +1,3 @@
-using System;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-using LaPDF.Web.Models.DTOs;
-using LaPDF.Web.Models.Enums;
-using LaPDF.Web.Services.Implementations;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Xunit;
-
 namespace LaPDF.UnitTests.Services;
 
 public class PdfServiceTests
@@ -120,7 +108,6 @@ public class PdfServiceTests
 
         // Assert
         Assert.False(result.Success);
-        // O método valida que o arquivo é vazio e retorna erro
         Assert.Equal("Nenhum arquivo foi selecionado", result.ErrorMessage);
     }
 
@@ -206,12 +193,27 @@ public class PdfServiceTests
         {
             File = fileMock,
             SplitAllPages = false,
-            PageNumbers = null!
+            PageNumbersInput = ""  // String vazia para não ter páginas selecionadas
         };
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() => _pdfService.SplitAsync(request));
         Assert.Contains("Selecione pelo menos uma página", exception.Message);
+    }
+
+    [Fact]
+    public async Task ConvertAsync_WithNullFile_ShouldThrowException()
+    {
+        // Arrange
+        var request = new ConvertRequest
+        {
+            File = null!,
+            TargetFormat = ConvertFormat.JPG
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() => _pdfService.ConvertAsync(request));
+        Assert.Contains("Nenhum arquivo foi selecionado", exception.Message);
     }
 
     private byte[] CreateSamplePdf()
