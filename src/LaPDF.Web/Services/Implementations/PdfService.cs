@@ -19,7 +19,6 @@ public class PdfService : IPdfService
     {
         try
         {
-            // Validação de null
             if (request.File == null || request.File.Length == 0)
             {
                 return new CompressResponse
@@ -31,15 +30,6 @@ public class PdfService : IPdfService
 
             var fileBytes = await GetFileBytesAsync(request.File);
             
-            if (!IsValidPdf(fileBytes))
-            {
-                return new CompressResponse
-                {
-                    Success = false,
-                    ErrorMessage = "Arquivo PDF inválido"
-                };
-            }
-
             var originalSize = fileBytes.Length;
             var compressedBytes = await CompressPdfAsync(fileBytes, request.Quality);
 
@@ -59,7 +49,7 @@ public class PdfService : IPdfService
             return new CompressResponse
             {
                 Success = false,
-                ErrorMessage = ex.Message
+                ErrorMessage = $"Erro ao comprimir: {ex.Message}"
             };
         }
     }
@@ -68,7 +58,6 @@ public class PdfService : IPdfService
     {
         try
         {
-            // Validação de null
             if (request.Files == null || request.Files.Count < 2)
             {
                 throw new Exception("Selecione pelo menos 2 arquivos PDF para mesclar");
@@ -82,12 +71,10 @@ public class PdfService : IPdfService
                     throw new Exception("Um dos arquivos está vazio ou inválido");
 
                 var bytes = await GetFileBytesAsync(file);
-                if (!IsValidPdf(bytes))
-                    throw new Exception($"Arquivo {file.FileName} não é um PDF válido");
                 documents.Add(bytes);
             }
 
-            return await MergePdfsAsync(documents);
+            return await MergePdfsWithGhostScriptAsync(documents);
         }
         catch (Exception ex)
         {
@@ -100,18 +87,13 @@ public class PdfService : IPdfService
     {
         try
         {
-            // Validação de null
             if (request.File == null || request.File.Length == 0)
             {
                 throw new Exception("Nenhum arquivo foi selecionado");
             }
 
             var fileBytes = await GetFileBytesAsync(request.File);
-            
-            if (!IsValidPdf(fileBytes))
-                throw new Exception("Arquivo PDF inválido");
 
-            // Validar se tem páginas para dividir
             if (!request.SplitAllPages && (request.PageNumbers == null || !request.PageNumbers.Any()))
             {
                 throw new Exception("Selecione pelo menos uma página para dividir ou marque 'Dividir todas'");
@@ -135,9 +117,11 @@ public class PdfService : IPdfService
     {
         try
         {
-            using var stream = new MemoryStream(fileBytes);
-            using var reader = new PdfReader(stream);
-            return true;
+            return fileBytes.Length > 0 && 
+                   fileBytes[0] == 0x25 && 
+                   fileBytes[1] == 0x50 && 
+                   fileBytes[2] == 0x44 && 
+                   fileBytes[3] == 0x46;
         }
         catch
         {
@@ -171,120 +155,212 @@ public class PdfService : IPdfService
 
     private async Task<byte[]> CompressPdfAsync(byte[] fileBytes, CompressionQuality quality)
     {
-        return await Task.Run(() =>
+        var tempInput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+        var tempOutput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+        
+        try
         {
-            using var inputStream = new MemoryStream(fileBytes);
-            using var outputStream = new MemoryStream();
+            await System.IO.File.WriteAllBytesAsync(tempInput, fileBytes);
             
-            var reader = new PdfReader(inputStream);
-            var document = new Document();
-            var writer = PdfWriter.GetInstance(document, outputStream);
-            
-            // Configurar compressão
-            writer.CompressionLevel = quality switch
+            var qualitySettings = quality switch
             {
-                CompressionQuality.Low => 0,
-                CompressionQuality.Medium => 1,
-                CompressionQuality.High => 9,
-                _ => 1
+                CompressionQuality.Low => "/screen",
+                CompressionQuality.Medium => "/ebook",
+                CompressionQuality.High => "/printer",
+                _ => "/ebook"
             };
-
-            document.Open();
             
-            var cb = writer.DirectContent;
+            var args = $"-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS={qualitySettings} -sOutputFile={tempOutput} {tempInput}";
             
-            for (int i = 1; i <= reader.NumberOfPages; i++)
+            var process = new Process
             {
-                document.NewPage();
-                var page = writer.GetImportedPage(reader, i);
-                cb.AddTemplate(page, 0, 0);
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/usr/bin/gs",  // Caminho absoluto
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            
+            process.Start();
+            
+            var output = await process.StandardOutput.ReadToEndAsync();
+            var error = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            
+            if (process.ExitCode != 0)
+            {
+                _logger.LogError($"GhostScript erro: {error}");
+                throw new Exception($"GhostScript erro: {error}");
             }
             
-            document.Close();
-            reader.Close();
+            if (!System.IO.File.Exists(tempOutput))
+            {
+                throw new Exception("Arquivo de saída não foi criado");
+            }
             
-            return outputStream.ToArray();
-        });
+            var compressedBytes = await System.IO.File.ReadAllBytesAsync(tempOutput);
+            
+            if (compressedBytes.Length == 0)
+            {
+                throw new Exception("Arquivo comprimido está vazio");
+            }
+            
+            return compressedBytes;
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempInput)) System.IO.File.Delete(tempInput);
+            if (System.IO.File.Exists(tempOutput)) System.IO.File.Delete(tempOutput);
+        }
     }
 
-    private async Task<byte[]> MergePdfsAsync(List<byte[]> documents)
+    private async Task<byte[]> MergePdfsWithGhostScriptAsync(List<byte[]> documents)
     {
-        return await Task.Run(() =>
+        var tempInputs = new List<string>();
+        var tempOutput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+        
+        try
         {
-            using var outputStream = new MemoryStream();
-            var document = new Document();
-            var writer = PdfWriter.GetInstance(document, outputStream);
-            
-            document.Open();
-            var cb = writer.DirectContent;
-            
-            foreach (var pdfBytes in documents)
+            for (int i = 0; i < documents.Count; i++)
             {
-                using var inputStream = new MemoryStream(pdfBytes);
-                var reader = new PdfReader(inputStream);
-                
-                for (int i = 1; i <= reader.NumberOfPages; i++)
-                {
-                    document.NewPage();
-                    var page = writer.GetImportedPage(reader, i);
-                    cb.AddTemplate(page, 0, 0);
-                }
-                
-                reader.Close();
+                var tempInput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+                await System.IO.File.WriteAllBytesAsync(tempInput, documents[i]);
+                tempInputs.Add(tempInput);
             }
             
-            document.Close();
-            return outputStream.ToArray();
-        });
+            var inputFiles = string.Join(" ", tempInputs.Select(f => $"\"{f}\""));
+            var args = $"-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -sOutputFile={tempOutput} {inputFiles}";
+            
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/usr/bin/gs",
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            
+            process.Start();
+            await process.WaitForExitAsync();
+            
+            if (process.ExitCode != 0)
+            {
+                var error = await process.StandardError.ReadToEndAsync();
+                throw new Exception($"GhostScript erro ao mesclar: {error}");
+            }
+            
+            return await System.IO.File.ReadAllBytesAsync(tempOutput);
+        }
+        finally
+        {
+            foreach (var tempInput in tempInputs)
+            {
+                if (System.IO.File.Exists(tempInput)) System.IO.File.Delete(tempInput);
+            }
+            if (System.IO.File.Exists(tempOutput)) System.IO.File.Delete(tempOutput);
+        }
     }
 
     private async Task<List<byte[]>> SplitPdfAsync(byte[] fileBytes, List<int>? pageNumbers, bool splitAllPages)
     {
-        return await Task.Run(() =>
+        var result = new List<byte[]>();
+        var tempInput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+        
+        try
         {
-            var result = new List<byte[]>();
+            await System.IO.File.WriteAllBytesAsync(tempInput, fileBytes);
             
-            using var inputStream = new MemoryStream(fileBytes);
-            var reader = new PdfReader(inputStream);
-            var totalPages = reader.NumberOfPages;
-
-            if (splitAllPages)
+            var totalPages = await GetTotalPagesAsync(tempInput);
+            
+            var pagesToExtract = splitAllPages 
+                ? Enumerable.Range(1, totalPages).ToList() 
+                : pageNumbers ?? new List<int>();
+            
+            foreach (var pageNum in pagesToExtract.Where(p => p >= 1 && p <= totalPages))
             {
-                for (int i = 1; i <= totalPages; i++)
+                var tempOutput = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid().ToString() + ".pdf");
+                var args = $"-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dFirstPage={pageNum} -dLastPage={pageNum} -sOutputFile={tempOutput} {tempInput}";
+                
+                try
                 {
-                    result.Add(ExtractPage(reader, i));
+                    var process = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "/usr/bin/gs",
+                            Arguments = args,
+                            RedirectStandardOutput = true,
+                            RedirectStandardError = true,
+                            UseShellExecute = false,
+                            CreateNoWindow = true
+                        }
+                    };
+                    
+                    process.Start();
+                    await process.WaitForExitAsync();
+                    
+                    if (process.ExitCode == 0 && System.IO.File.Exists(tempOutput))
+                    {
+                        var bytes = await System.IO.File.ReadAllBytesAsync(tempOutput);
+                        if (bytes.Length > 0)
+                            result.Add(bytes);
+                    }
+                }
+                finally
+                {
+                    if (System.IO.File.Exists(tempOutput)) System.IO.File.Delete(tempOutput);
                 }
             }
-            else if (pageNumbers != null && pageNumbers.Any())
-            {
-                foreach (var pageNum in pageNumbers.Where(p => p >= 1 && p <= totalPages))
-                {
-                    result.Add(ExtractPage(reader, pageNum));
-                }
-            }
-
-            reader.Close();
-            return result;
-        });
+        }
+        finally
+        {
+            if (System.IO.File.Exists(tempInput)) System.IO.File.Delete(tempInput);
+        }
+        
+        return result;
     }
 
-    private byte[] ExtractPage(PdfReader reader, int pageNumber)
+    private async Task<int> GetTotalPagesAsync(string pdfPath)
     {
-        using var outputStream = new MemoryStream();
-        var document = new Document();
-        var writer = PdfWriter.GetInstance(document, outputStream);
-        
-        document.Open();
-        var cb = writer.DirectContent;
-        var page = writer.GetImportedPage(reader, pageNumber);
-        
-        document.SetPageSize(reader.GetPageSize(pageNumber));
-        document.NewPage();
-        cb.AddTemplate(page, 0, 0);
-        
-        document.Close();
-        
-        return outputStream.ToArray();
+        try
+        {
+            var args = $"-dNODISPLAY -dNOSAFER -dBATCH -c \"({pdfPath}) (r) file runpdfbegin pdfpagecount = quit\"";
+            
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/usr/bin/gs",
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            
+            process.Start();
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            
+            var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)");
+            if (match.Success)
+                return int.Parse(match.Groups[1].Value);
+            
+            return 1;
+        }
+        catch
+        {
+            return 1;
+        }
     }
 
     private double CalculateReduction(long original, long compressed)

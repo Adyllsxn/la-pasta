@@ -2,6 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+# Instalar GhostScript no build
+RUN apt-get update && apt-get install -y ghostscript && rm -rf /var/lib/apt/lists/*
+
 # Copiar csproj e restaurar dependências
 COPY src/LaPDF.Web/*.csproj src/LaPDF.Web/
 RUN dotnet restore src/LaPDF.Web/LaPDF.Web.csproj
@@ -16,6 +19,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
+
+# Instalar GhostScript no runtime
+RUN apt-get update && apt-get install -y ghostscript && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
 

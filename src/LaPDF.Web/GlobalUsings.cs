@@ -1,7 +1,10 @@
 global using LaPDF.Web.Models.Enums;
 global using LaPDF.Web.Services.Interfaces;
 global using LaPDF.Web.Models.DTOs;
-global using iTextSharp.text;
-global using iTextSharp.text.pdf;
+global using iText.Kernel.Pdf;
 global using LaPDF.Web.Models.Settings;
 global using LaPDF.Web.Services.Implementations;
+global using System.Diagnostics;
+global using Microsoft.AspNetCore.Mvc;
+global using LaPDF.Web.Models;
+global using LaPDF.Web.Core.Helpers;
