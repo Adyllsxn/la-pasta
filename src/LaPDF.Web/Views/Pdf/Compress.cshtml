@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Comprimir PDF";
+}
+
+<div class="container py-4">
+    <div class="text-center mb-4">
+        <h1 class="display-5 fw-bold text-white">📄 Comprimir PDF</h1>
+        <p class="text-white-50">Reduza o tamanho do arquivo otimizando a qualidade</p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <strong>✅ PDF comprimido com sucesso!</strong><br />
+            Tamanho original: <strong>@TempData["OriginalSize"]</strong><br />
+            Tamanho comprimido: <strong>@TempData["CompressedSize"]</strong><br />
+            Redução: <strong>@TempData["Reduction"]</strong>
+        </div>
+    }
+
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card bg-dark border-secondary">
+                <div class="card-body">
+                    <form asp-action="Compress" method="post" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label text-white">Selecione o arquivo PDF</label>
+                            <input type="file" name="File" class="form-control" accept=".pdf" required />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-white">Qualidade de Compressão</label>
+                            <select name="Quality" class="form-select">
+                                <option value="Low">Baixa (maior compressão)</option>
+                                <option value="Medium" selected>Média (recomendado)</option>
+                                <option value="High">Alta (melhor qualidade)</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-compress-alt me-2"></i>Comprimir PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

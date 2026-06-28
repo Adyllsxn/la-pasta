@@ -1,7 +1,3 @@
-using System.Diagnostics;
-using Microsoft.AspNetCore.Mvc;
-using LaPDF.Web.Models;
-
 namespace LaPDF.Web.Controllers;
 
 public class HomeController : Controller
